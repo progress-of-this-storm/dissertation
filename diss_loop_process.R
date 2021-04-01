@@ -8,16 +8,34 @@ process_dates_NDI <- function(dates, # vector of dates as above
                               extent_sf, # sf object used to find image
                               dir_name, # directory name used for output files
                               location, # location of area used
-                              tile_name){ # Sentinel-2 tilename (can be found from USGS)
+                              tile_name, # Sentinel-2 tilename (can be found from USGS earth explorer)
+                              max_cloud){ # max % for cloud cover
     
+  source('diss_functions.R') # assumes diss_functions.R is in the working directory
+  
   require(sen2r)
   require(rgdal)
+  require(tools)
   require(raster)
   require(geojsonsf)
   
-  source('diss_functions.R') # assumes diss_functions.R is in the working directory
 
-for(i in 1:length(dates)){
+# error catching ----------------------------------------------------------
+
+  if (!file_ext(extent_sf)=='sf'){
+    stop("Spatial extent is not of type .sf")
+  }
+  
+  if (!class(dir_name) == "character"){
+    stop("Location is not of type 'character'")
+  }
+  
+  if (!class(tile_name)=="character"){
+    stop("Tile name is not of type 'character' ")
+  }
+
+
+  for(i in 1:length(dates)){
   
   date <- dates[i]
   
@@ -49,9 +67,9 @@ for(i in 1:length(dates)){
     
     mask_type = "cloud_and_shadow", # I want to hide (mask) the clouds and shadows
     
-    max_mask = 10, # only 10% of the image can be masked, else it gets rid of it
+    max_mask = max, # only 10% of the image can be masked, else it gets rid of it
     
-    max_cloud_safe = 10,
+    max_cloud_safe = max_cloud,
     
     path_l1c = paste(date,'-l1c_out', sep = ""), # save to the directories
     
@@ -78,7 +96,7 @@ for(i in 1:length(dates)){
   files_10m <- list.files(paste(main.dir,SAFE.dir,'GRANULE',L2A_prod,'IMG_DATA','R10m', sep = "/"))
   files_20m <- list.files(paste(main.dir,SAFE.dir,'GRANULE',L2A_prod,'IMG_DATA','R20m', sep = "/"))
   
-  if (corr = T){
+  if (corr == T){
 
   # perform processing operation --------------------------------------------
   compute_NDI_corr(
